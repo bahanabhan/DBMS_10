@@ -1,22 +1,11 @@
-% ============================================================
-%  TERM PROJECT – PROPOSAL (template)
-%  Databases · THGA Bochum
-%
-%  How to use:
-%    1. Copy this folder into your own repository.
-%    2. Replace every  <<< ... >>>  placeholder with your content.
-%    3. Build with  `make`  (see the Makefile / README).
-%    4. Send the resulting PDF to the lecturer and wait for approval.
-% ============================================================
 \documentclass[11pt,a4paper]{article}
 
 \usepackage{thga-db}
 \usepackage{caption}   % enables \captionof inside minipages
-
-% ----- Placeholder figure (delete once you insert a real image) ----
-% Draws a labelled box you can swap for \includegraphics later.
-% Usage: \placeholder{width}{height}{label text}
+\usepackage{tikz}
 \usetikzlibrary{positioning}
+
+% ----- Placeholder figure macro ----
 \newcommand{\placeholder}[3]{%
   \begin{tikzpicture}
     \node[draw=THGABlau!45, fill=THGABlau!5, very thick, rounded corners=2pt,
@@ -25,11 +14,11 @@
   \end{tikzpicture}%
 }
 
-% ----- Fill in your metadata -------------------------------
+% ----- Metadata --------------------------------------------
 \renewcommand{\thgaKurs}{Databases}
 \renewcommand{\thgaDatum}{Summer Term 2026}
-\newcommand{\authorName}{<<< Your name >>>}
-\newcommand{\projectTitle}{<<< Working title of your application >>>}
+\newcommand{\authorName}{Baha Eddine Nabhan}
+\newcommand{\projectTitle}{LabTrack: University Laboratory Equipment \& Loan Management System}
 
 \begin{document}
 \thispagestyle{empty}
@@ -54,8 +43,13 @@ includegraphics} and keep the caption.
 \section{Application domain and motivation}
 % ============================================================
 
-<<< Which application do you build and which problem does it solve? Who uses
-it, and for what? Add one or two concrete usage scenarios. >>>
+In university research labs, tracking hardware inventory (such as oscilloscopes, microcontrollers, and sensors) across various courses and student projects often relies on manual spreadsheets. This manual approach leads to untracked equipment loss, double-booking conflicts, and a lack of visibility into device maintenance states.
+
+\textbf{LabTrack} is a central laboratory management system designed for lab administrators and university students.
+\begin{itemize}
+    \item \textbf{Scenario 1 (Student Loan Request):} A student logs into the desktop application to check the real-time availability of measurement equipment for an upcoming practical exam. They submit a loan request specifying the start and target return dates.
+    \item \textbf{Scenario 2 (Admin Management \& Auditing):} A lab manager uses protected admin endpoints to approve equipment loans, log hardware condition maintenance, and inspect high-usage assets via aggregated borrowing metrics.
+\end{itemize}
 
 % ============================================================
 \section{Data model -- ER sketch}
@@ -63,46 +57,45 @@ it, and for what? Add one or two concrete usage scenarios. >>>
 
 \begin{figure}[ht]
   \centering
-  % Replace the placeholder with: \includegraphics[width=0.85\linewidth]{er-sketch.jpg}
-  \placeholder{0.85\linewidth}{4.5cm}{[ placeholder ]\\ your ER sketch goes here\\ (a photographed hand drawing is fine)}
-  \caption{ER sketch of the <<< domain >>> data model: entity types, key
-  attributes, relationships and cardinalities (at least one N:M).}
+  % Replace with: \includegraphics[width=0.85\linewidth]{er-sketch.jpg}
+  \placeholder{0.85\linewidth}{4.5cm}{[ ER Model Sketch ]\\ Entity Types: Student, Equipment, Loan, MaintenanceLog\\ N:M Relationship: Student <-> Equipment via Loan}
+  \caption{ER sketch of the LabTrack data model showing entities, key attributes, cardinalities, and the N:M loan relationship.}
   \label{fig:er}
 \end{figure}
 
-Figure~\ref{fig:er} shows <<< explain your ER model here: name the central
-entity types, the key attributes and the relationships, and point out the N:M
-relationship and its cardinalities. >>>
+Figure~\ref{fig:er} illustrates the conceptual ER model for the LabTrack domain. The central entity types are \texttt{Student}, \texttt{Equipment}, \texttt{Loan}, and \texttt{MaintenanceLog}. A student can request multiple loans over time, while an item of equipment can be borrowed repeatedly across its lifecycle, establishing a classic $N:M$ relationship between \texttt{Student} and \texttt{Equipment}. This $N:M$ link is explicit through the junction entity \texttt{Loan}, which tracks key transactional attributes such as \texttt{start\_date}, \texttt{due\_date}, and \texttt{status}. Additionally, \texttt{Equipment} has a $1:N$ relationship with \texttt{MaintenanceLog} to track service records.
 
 % ============================================================
 \section{From model to schema}
 % ============================================================
 
-<<< Derive the relational schema. For each table give the columns, the primary
-key (underlined) and the foreign keys. >>>
+The relational schema is derived directly from the conceptual ER diagram:
 
 \begin{itemize}
-  \item \texttt{<<<table>>>}(\underline{id}, <<<column>>>, \dots)
-  \item \texttt{<<<table>>>}(\underline{id}, \emph{<<<foreign\_key>>>}, \dots)
+  \item \texttt{students}(\underline{student\_id}, name, email, matriculation\_no)
+  \item \texttt{categories}(\underline{category\_id}, category\_name, location\_rack)
+  \item \texttt{equipment}(\underline{equipment\_id}, serial\_no, model\_name, status, \emph{category\_id})
+  \item \texttt{loans}(\underline{loan\_id}, \emph{student\_id}, \emph{equipment\_id}, issue\_date, due\_date, return\_date)
+  \item \texttt{maintenance\_logs}(\underline{log\_id}, \emph{equipment\_id}, log\_date, issue\_description, cost)
 \end{itemize}
 
-\textbf{Normalisation.} <<< One or two sentences: why is the schema free of
-redundancy (at least 3NF)? >>>
+\textbf{Normalisation.} The schema satisfies the Third Normal Form (3NF). Every non-key attribute depends strictly on its primary key (1NF/2NF), and there are no transitive functional dependencies between non-key attributes (e.g., equipment category locations are isolated in the \texttt{categories} table to prevent duplicate storage).
 
 % ============================================================
 \section{API design}
 % ============================================================
 
-<<< List the planned FastAPI endpoints. Mark where a JOIN / an aggregation
-sits, and which endpoints require the X-API-Key. >>>
+The FastAPI backend exposes structured endpoints separating public read access from privileged operations requiring an \texttt{X-API-Key}:
 
 \renewcommand{\arraystretch}{1.2}
-\begin{tabularx}{\linewidth}{@{}p{2cm}p{4cm}X@{}}
+\begin{tabularx}{\linewidth}{@{}p{2.2cm}p{4.8cm}X@{}}
 \toprule
 \textbf{Method} & \textbf{Path} & \textbf{Purpose} \\
 \midrule
-\texttt{GET}  & \texttt{/<<<…>>>} & <<< reads … (JOIN / aggregation) >>> \\
-\texttt{POST} & \texttt{/<<<…>>>} & <<< creates … (requires X-API-Key) >>> \\
+\texttt{GET}  & \texttt{/api/v1/equipment} & Reads active equipment list with category details (\texttt{JOIN}). \\
+\texttt{GET}  & \texttt{/api/v1/analytics/usage} & Computes total loan count and uptime ratio per category (\texttt{JOIN} + aggregation). \\
+\texttt{POST} & \texttt{/api/v1/loans} & Creates a new equipment loan record (requires \texttt{X-API-Key}). \\
+\texttt{POST} & \texttt{/api/v1/maintenance} & Adds a maintenance log entry (requires \texttt{X-API-Key}). \\
 \bottomrule
 \end{tabularx}
 
@@ -110,108 +103,92 @@ sits, and which endpoints require the X-API-Key. >>>
 \section{Frontend prototype (hand sketches)}
 % ============================================================
 
-<<< Describe what the frontend looks like and which endpoints it operates, and
-document a prototypical frontend with hand-drawn sketches -- one per screen/form.
-Python/tkinter is recommended; if you use something else, say what and why. The
-frontend is delivered as a .deb installer and asks for the API URL and X-API-Key
-in a connection dialog at startup. >>>
+The frontend client is implemented using Python and \texttt{tkinter}. It is packaged and distributed as a native \texttt{.deb} installer for Linux desktop environments. On startup, the application prompts the user for authentication credentials and the target backend endpoint url.
 
-% The four boxes below are placeholders. Replace each \placeholder{...} with
-% \includegraphics[width=\linewidth]{your-sketch.jpg} and keep the \captionof.
 \begin{figure}[ht]
 \centering
 \begin{minipage}[t]{0.47\linewidth}\centering
-  \placeholder{\linewidth}{3.5cm}{[ placeholder ]\\ connection dialog}
-  \captionof{figure}{Startup connection dialog: API URL + X-API-Key.}
+  \placeholder{\linewidth}{3.5cm}{[ Hand Sketch 1 ]\\ Connection Dialog}
+  \captionof{figure}{Startup connection dialog collecting the API URL and X-API-Key.}
   \label{fig:fe-connect}
 \end{minipage}\hfill
 \begin{minipage}[t]{0.47\linewidth}\centering
-  \placeholder{\linewidth}{3.5cm}{[ placeholder ]\\ main / list screen}
-  \captionof{figure}{Main screen: <<< list/table, calls \texttt{GET /<<<…>>>} >>>.}
+  \placeholder{\linewidth}{3.5cm}{[ Hand Sketch 2 ]\\ Equipment List}
+  \captionof{figure}{Main screen: searches inventory via \texttt{GET /api/v1/equipment}.}
   \label{fig:fe-main}
 \end{minipage}
 
 \vspace{1em}
 
 \begin{minipage}[t]{0.47\linewidth}\centering
-  \placeholder{\linewidth}{3.5cm}{[ placeholder ]\\ detail / form screen}
-  \captionof{figure}{Detail form: <<< create/edit, calls \texttt{POST /<<<…>>>} >>>.}
+  \placeholder{\linewidth}{3.5cm}{[ Hand Sketch 3 ]\\ Loan Creation Form}
+  \captionof{figure}{Detail form: creates loan via \texttt{POST /api/v1/loans}.}
   \label{fig:fe-detail}
 \end{minipage}\hfill
 \begin{minipage}[t]{0.47\linewidth}\centering
-  \placeholder{\linewidth}{3.5cm}{[ placeholder ]\\ second feature screen}
-  \captionof{figure}{<<< Second feature screen and the endpoint it calls >>>.}
+  \placeholder{\linewidth}{3.5cm}{[ Hand Sketch 4 ]\\ Analytics Dashboard}
+  \captionof{figure}{Analytics view: calls \texttt{GET /api/v1/analytics/usage}.}
   \label{fig:fe-second}
 \end{minipage}
 \end{figure}
 
-Figures~\ref{fig:fe-connect}--\ref{fig:fe-second} show the four screens of the
-prototype. Figure~\ref{fig:fe-connect} shows <<< the connection dialog that
-collects the API URL and X-API-Key at startup >>>; Figure~\ref{fig:fe-main}
-shows <<< the main screen and the endpoint it reads from >>>;
-Figure~\ref{fig:fe-detail} shows <<< the form used to create/edit a record and
-the write endpoint it calls >>>; and Figure~\ref{fig:fe-second} shows <<< the
-remaining screen >>>.
+Figures~\ref{fig:fe-connect}--\ref{fig:fe-second} illustrate the four wireframe screens of the GUI application. Figure~\ref{fig:fe-connect} shows the connection modal displayed upon startup to capture backend connectivity details. Figure~\ref{fig:fe-main} displays the primary dashboard, presenting available equipment fetched via \texttt{GET /api/v1/equipment}. Figure~\ref{fig:fe-detail} displays the submission dialog for reserving equipment via \texttt{POST /api/v1/loans}. Finally, Figure~\ref{fig:fe-second} depicts the administration panel visualizing equipment loan frequency built using aggregate data.
 
 % ============================================================
 \section{Operation with Docker Compose}
 % ============================================================
 
-<<< Which services run in your docker-compose.yml (at least postgres and api)?
-Where do the credentials live (.env)? How is the backend deployed on the
-lecture server? >>>
+The application infrastructure runs using \texttt{docker-compose.yml} managing two main services:
+\begin{enumerate}
+    \item \texttt{db}: A PostgreSQL container running image \texttt{postgres:16-alpine} with persistent volume mounts.
+    \item \texttt{api}: A Python 3.11 container hosting the FastAPI server via \texttt{uvicorn}.
+\end{enumerate}
+Database credentials, port assignments, and API secret keys are stored in a local \texttt{.env} file (excluded from version control). For production grading on the lecture server, deployment is initiated via \texttt{docker compose up -d --build}.
 
 % ============================================================
 \section{Scope, milestones and risks}
 % ============================================================
 
-\textbf{Scope.} <<< How many tables and endpoints? >>>
+\textbf{Scope.} 5 relational tables, 4 FastAPI endpoints, 1 \texttt{tkinter} desktop GUI client packaged as a \texttt{.deb} file.
 
-\textbf{Milestones and schedule.} <<< Fill in the week and the estimated hours;
-the hours should add up to roughly 40. >>>
+\textbf{Milestones and schedule.}
 
 \renewcommand{\arraystretch}{1.2}
 \begin{tabularx}{\linewidth}{@{}p{1.4cm}Xp{1.8cm}@{}}
 \toprule
 \textbf{Week} & \textbf{Milestone} & \textbf{Est. hours} \\
 \midrule
-<<<1>>>   & <<< e.g. schema + seed data ready >>>                        & <<<8>>> \\
-<<<2--3>>> & <<< e.g. API reading/writing, protected by X-API-Key >>>   & <<<12>>> \\
-<<<4--5>>> & <<< e.g. frontend operates the core endpoints, .deb >>>    & <<<10>>> \\
-<<<6>>>   & <<< e.g. tests + documentation + video >>>                  & <<<10>>> \\
+1   & PostgreSQL relational schema setup, DDL scripts, and mock seed data. & 8\,h \\
+2--3 & FastAPI backend implementation with ORM/SQL, joins, aggregation, and authentication. & 12\,h \\
+4--5 & \texttt{tkinter} GUI client development, API interaction, and \texttt{.deb} package assembly. & 10\,h \\
+6   & Automated integration testing, documentation, and video demonstration recording. & 10\,h \\
 \bottomrule
 \end{tabularx}
 
-\textbf{Risks.} <<< One or two risks that could make the project fail. >>>
+\textbf{Risks.} A primary risk is hardware status desynchronization caused by simultaneous loan submissions. This is mitigated at the database layer using explicit transactions with strict isolation levels or check constraints.
 
 % ============================================================
 \section{Acceptance criteria and testing}
 % ============================================================
 
-<<< State when your system counts as ``done and correct'', and how you prove it.
-Formulate each criterion as a checkable statement, then name the test that backs
-it. Turn the risk above into at least one concrete test case. >>>
-
-\textbf{Acceptance criteria.} <<< Checkable statements about the finished system. >>>
+\textbf{Acceptance criteria.}
 \begin{itemize}[topsep=2pt]
-  \item <<< e.g. A record that violates a constraint is rejected (API returns 4xx). >>>
-  \item <<< e.g. GET /<<<…>>> returns the correct aggregated value (JOIN + aggregation). >>>
-  \item <<< e.g. Write endpoints without a valid X-API-Key are refused (401/403). >>>
+  \item Attempting to issue a loan for an item marked \texttt{'MAINTENANCE'} is rejected by the API with a \texttt{400 Bad Request}.
+  \item \texttt{GET /api/v1/analytics/usage} correctly calculates aggregated usage counts joining \texttt{equipment} and \texttt{loans}.
+  \item Write requests (\texttt{POST /api/v1/loans}) missing a valid \texttt{X-API-Key} header fail immediately with HTTP \texttt{401 Unauthorized}.
 \end{itemize}
 
-\textbf{Test plan.} <<< What you test and with which tools. A short list is enough. >>>
+\textbf{Test plan.}
 \begin{itemize}[topsep=2pt]
-  \item \textbf{Database:} <<< which constraints (PK/FK/UNIQUE/NOT NULL) you verify. >>>
-  \item \textbf{API:} <<< endpoint tests, happy path + error cases, e.g. with
-        \texttt{pytest} and FastAPI's \texttt{TestClient} against a test database (L 08). >>>
-  \item \textbf{Business rule:} <<< the test that covers the risk named above. >>>
+  \item \textbf{Database:} Verify primary key, foreign key CASCADE integrity, and \texttt{CHECK} constraints using SQL integration scripts.
+  \item \textbf{API:} Automated endpoint test suite built with \texttt{pytest} and FastAPI's \texttt{TestClient} targeting an isolated test database.
+  \item \textbf{Business rule:} Unit tests asserting that double-booking or illegal state transitions trigger transactional rollbacks.
 \end{itemize}
 
 \vspace{1em}
 \begin{infobox}
 \textbf{Effort budget:} the whole term project (system, documentation and video)
 should fit into roughly \textbf{40\,h of work} over at most \textbf{2 months}.
-Keep your scope within that budget.
 \end{infobox}
 
 \end{document}
