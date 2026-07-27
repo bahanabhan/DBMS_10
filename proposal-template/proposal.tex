@@ -1,24 +1,17 @@
+% ============================================================
+%  TERM PROJECT – PROPOSAL
+%  Databases · THGA Bochum
+% ============================================================
 \documentclass[11pt,a4paper]{article}
 
 \usepackage{thga-db}
 \usepackage{caption}   % enables \captionof inside minipages
-\usepackage{tikz}
-\usetikzlibrary{positioning}
 
-% ----- Placeholder figure macro ----
-\newcommand{\placeholder}[3]{%
-  \begin{tikzpicture}
-    \node[draw=THGABlau!45, fill=THGABlau!5, very thick, rounded corners=2pt,
-          minimum width=#1, minimum height=#2, align=center, inner sep=6pt,
-          text=THGABlau!75, font=\small\itshape] {#3};
-  \end{tikzpicture}%
-}
-
-% ----- Metadata --------------------------------------------
+% ----- Metadata ---------------------------------------------
 \renewcommand{\thgaKurs}{Databases}
 \renewcommand{\thgaDatum}{Summer Term 2026}
-\newcommand{\authorName}{Baha Eddine Nabhan}
-\newcommand{\projectTitle}{LabTrack: University Laboratory Equipment \& Loan Management System}
+\newcommand{\authorName}{<<< Baha Eddine Nabhan >>>}
+\newcommand{\projectTitle}{CounterStock: Order \& Inventory Management for a Snack Bar Counter}
 
 \begin{document}
 \thispagestyle{empty}
@@ -34,22 +27,35 @@
 \begin{infobox}
 \textbf{Every figure must be explained in the running text.} A figure never
 stands on its own: refer to it by number and say what it shows -- e.g.
-``Figure~\ref{fig:er} shows the ER model of \dots''. The placeholder boxes below
-mark where your own images go; replace each with \texttt{\textbackslash
-includegraphics} and keep the caption.
+``Figure~\ref{fig:er} shows the ER model of \dots''.
+
+Every figure below still points at \texttt{example-figure.jpg}, the dummy
+image shipped with this template. Photograph or scan your own sketch, drop
+the file next to \texttt{proposal.tex} using the filename already given
+below (e.g.\ \texttt{er-sketch.jpg}), and it will appear in place of the
+dummy once you rebuild.
 \end{infobox}
 
 % ============================================================
 \section{Application domain and motivation}
 % ============================================================
 
-In university research labs, tracking hardware inventory (such as oscilloscopes, microcontrollers, and sensors) across various courses and student projects often relies on manual spreadsheets. This manual approach leads to untracked equipment loss, double-booking conflicts, and a lack of visibility into device maintenance states.
+At a fast-food counter or small Imbiss -- like a Burger King register or a
+Bratwursthaus kitchen -- staff take an order while ingredients are consumed
+behind the scenes. Many small food outlets still track that stock on paper
+or in someone's head, which leads to running out of a key ingredient
+mid-shift, or over-ordering because nobody had a clear number.
 
-\textbf{LabTrack} is a central laboratory management system designed for lab administrators and university students.
-\begin{itemize}
-    \item \textbf{Scenario 1 (Student Loan Request):} A student logs into the desktop application to check the real-time availability of measurement equipment for an upcoming practical exam. They submit a loan request specifying the start and target return dates.
-    \item \textbf{Scenario 2 (Admin Management \& Auditing):} A lab manager uses protected admin endpoints to approve equipment loans, log hardware condition maintenance, and inspect high-usage assets via aggregated borrowing metrics.
-\end{itemize}
+\textbf{CounterStock} is a small database-backed system for a snack bar
+counter that ties every sale directly to ingredient stock: each order
+automatically deducts what it used, so staff always know what's running low.
+
+Two usage scenarios: a cashier at the register selects menu items and
+quantities for a customer; the system checks that enough of every required
+ingredient is in stock, records the order, and deducts the ingredients
+used. Before closing, a shift lead checks a dashboard of ingredients
+running below their reorder threshold and logs a restock delivery, so the
+next shift starts with accurate numbers.
 
 % ============================================================
 \section{Data model -- ER sketch}
@@ -57,45 +63,64 @@ In university research labs, tracking hardware inventory (such as oscilloscopes,
 
 \begin{figure}[ht]
   \centering
-  % Replace with: \includegraphics[width=0.85\linewidth]{er-sketch.jpg}
-  \placeholder{0.85\linewidth}{4.5cm}{[ ER Model Sketch ]\\ Entity Types: Student, Equipment, Loan, MaintenanceLog\\ N:M Relationship: Student <-> Equipment via Loan}
-  \caption{ER sketch of the LabTrack data model showing entities, key attributes, cardinalities, and the N:M loan relationship.}
+  % Swap example-figure.jpg for your own file once you've drawn it.
+  \includegraphics[width=0.85\linewidth]{er-sketch.jpg}
+  \caption{ER sketch of the snack bar counter data model: entity types, key
+  attributes, relationships and cardinalities (at least one N:M).}
   \label{fig:er}
 \end{figure}
 
-Figure~\ref{fig:er} illustrates the conceptual ER model for the LabTrack domain. The central entity types are \texttt{Student}, \texttt{Equipment}, \texttt{Loan}, and \texttt{MaintenanceLog}. A student can request multiple loans over time, while an item of equipment can be borrowed repeatedly across its lifecycle, establishing a classic $N:M$ relationship between \texttt{Student} and \texttt{Equipment}. This $N:M$ link is explicit through the junction entity \texttt{Loan}, which tracks key transactional attributes such as \texttt{start\_date}, \texttt{due\_date}, and \texttt{status}. Additionally, \texttt{Equipment} has a $1:N$ relationship with \texttt{MaintenanceLog} to track service records.
+Figure~\ref{fig:er} shows the ER model of the snack bar counter domain. The
+central entity types are \texttt{Staff}, \texttt{MenuItem},
+\texttt{Ingredient}, \texttt{Recipe}, \texttt{Orders}, and
+\texttt{OrderItem}. \texttt{Staff} has a $1{:}N$ relationship to
+\texttt{Orders} (one staff member creates many orders). \texttt{MenuItem}
+and \texttt{Ingredient} are connected $N{:}M$ through the associative
+entity \texttt{Recipe}, which records how much of each ingredient a menu
+item requires. \texttt{Orders} and \texttt{MenuItem} are connected $N{:}M$
+through the associative entity \texttt{OrderItem}, which records which
+items and how many were part of an order.
 
 % ============================================================
 \section{From model to schema}
 % ============================================================
 
-The relational schema is derived directly from the conceptual ER diagram:
+The relational schema is derived directly from the ER model above.
+Underlined attributes are primary keys; italicised attributes are foreign
+keys.
 
 \begin{itemize}
-  \item \texttt{students}(\underline{student\_id}, name, email, matriculation\_no)
-  \item \texttt{categories}(\underline{category\_id}, category\_name, location\_rack)
-  \item \texttt{equipment}(\underline{equipment\_id}, serial\_no, model\_name, status, \emph{category\_id})
-  \item \texttt{loans}(\underline{loan\_id}, \emph{student\_id}, \emph{equipment\_id}, issue\_date, due\_date, return\_date)
-  \item \texttt{maintenance\_logs}(\underline{log\_id}, \emph{equipment\_id}, log\_date, issue\_description, cost)
+  \item \texttt{staff}(\underline{id}, name, role, email)
+  \item \texttt{menu\_items}(\underline{id}, name, category, price, active)
+  \item \texttt{ingredients}(\underline{id}, name, unit, stock\_quantity, reorder\_threshold)
+  \item \texttt{recipes}(\underline{\emph{menu\_item\_id}}, \underline{\emph{ingredient\_id}}, quantity\_required)
+  \item \texttt{orders}(\underline{id}, \emph{staff\_id}, order\_time, status)
+  \item \texttt{order\_items}(\underline{\emph{order\_id}}, \underline{\emph{menu\_item\_id}}, quantity, subtotal)
 \end{itemize}
 
-\textbf{Normalisation.} The schema satisfies the Third Normal Form (3NF). Every non-key attribute depends strictly on its primary key (1NF/2NF), and there are no transitive functional dependencies between non-key attributes (e.g., equipment category locations are isolated in the \texttt{categories} table to prevent duplicate storage).
+\textbf{Normalisation.} Every non-key attribute depends on the whole
+primary key and nothing but the key -- e.g.\ in \texttt{order\_items},
+\texttt{subtotal} depends on both \texttt{order\_id} and
+\texttt{menu\_item\_id} together, not on either alone -- and no column
+depends transitively on another non-key column. The schema is in 3NF.
 
 % ============================================================
 \section{API design}
 % ============================================================
 
-The FastAPI backend exposes structured endpoints separating public read access from privileged operations requiring an \texttt{X-API-Key}:
+At least one reading and one writing endpoint are covered below, with the
+JOIN/aggregation and the \texttt{X-API-Key} protection both located.
 
 \renewcommand{\arraystretch}{1.2}
-\begin{tabularx}{\linewidth}{@{}p{2.2cm}p{4.8cm}X@{}}
+\begin{tabularx}{\linewidth}{@{}p{2.2cm}p{4.6cm}X@{}}
 \toprule
 \textbf{Method} & \textbf{Path} & \textbf{Purpose} \\
 \midrule
-\texttt{GET}  & \texttt{/api/v1/equipment} & Reads active equipment list with category details (\texttt{JOIN}). \\
-\texttt{GET}  & \texttt{/api/v1/analytics/usage} & Computes total loan count and uptime ratio per category (\texttt{JOIN} + aggregation). \\
-\texttt{POST} & \texttt{/api/v1/loans} & Creates a new equipment loan record (requires \texttt{X-API-Key}). \\
-\texttt{POST} & \texttt{/api/v1/maintenance} & Adds a maintenance log entry (requires \texttt{X-API-Key}). \\
+\texttt{GET}  & \texttt{/menu} & reads menu items with availability derived from ingredient stock vs.\ recipe requirements (JOIN + aggregation: MIN of stock $\div$ quantity required) \\
+\texttt{GET}  & \texttt{/ingredients/low-stock} & reads ingredients where stock\_quantity is below reorder\_threshold \\
+\texttt{GET}  & \texttt{/orders/\{id\}} & reads order detail with line items and total (JOIN + aggregation: SUM of subtotals) \\
+\texttt{POST} & \texttt{/orders} & creates a new order and deducts ingredient stock per recipe (requires X-API-Key) \\
+\texttt{POST} & \texttt{/ingredients/\{id\}/restock} & increases an ingredient's stock (requires X-API-Key) \\
 \bottomrule
 \end{tabularx}
 
@@ -103,53 +128,64 @@ The FastAPI backend exposes structured endpoints separating public read access f
 \section{Frontend prototype (hand sketches)}
 % ============================================================
 
-The frontend client is implemented using Python and \texttt{tkinter}. It is packaged and distributed as a native \texttt{.deb} installer for Linux desktop environments. On startup, the application prompts the user for authentication credentials and the target backend endpoint url.
+The frontend is a small \texttt{tkinter} app (as recommended in L~10),
+packaged as a \texttt{.deb} installer. It asks for the API URL and the
+\texttt{X-API-Key} in a connection dialog at startup, then offers three
+further screens: a menu view, an order form, and a stock view.
 
 \begin{figure}[ht]
 \centering
 \begin{minipage}[t]{0.47\linewidth}\centering
-  \placeholder{\linewidth}{3.5cm}{[ Hand Sketch 1 ]\\ Connection Dialog}
-  \captionof{figure}{Startup connection dialog collecting the API URL and X-API-Key.}
+  \includegraphics[width=\linewidth]{fe-connect.jpg}
+  \captionof{figure}{Startup connection dialog: API URL + X-API-Key.}
   \label{fig:fe-connect}
 \end{minipage}\hfill
 \begin{minipage}[t]{0.47\linewidth}\centering
-  \placeholder{\linewidth}{3.5cm}{[ Hand Sketch 2 ]\\ Equipment List}
-  \captionof{figure}{Main screen: searches inventory via \texttt{GET /api/v1/equipment}.}
+  \includegraphics[width=\linewidth]{fe-main.jpg}
+  \captionof{figure}{Main screen: menu list with availability, calls \texttt{GET /menu}.}
   \label{fig:fe-main}
 \end{minipage}
 
 \vspace{1em}
 
 \begin{minipage}[t]{0.47\linewidth}\centering
-  \placeholder{\linewidth}{3.5cm}{[ Hand Sketch 3 ]\\ Loan Creation Form}
-  \captionof{figure}{Detail form: creates loan via \texttt{POST /api/v1/loans}.}
+  \includegraphics[width=\linewidth]{fe-detail.jpg}
+  \captionof{figure}{Detail form: places an order, calls \texttt{POST /orders}.}
   \label{fig:fe-detail}
 \end{minipage}\hfill
 \begin{minipage}[t]{0.47\linewidth}\centering
-  \placeholder{\linewidth}{3.5cm}{[ Hand Sketch 4 ]\\ Analytics Dashboard}
-  \captionof{figure}{Analytics view: calls \texttt{GET /api/v1/analytics/usage}.}
+  \includegraphics[width=\linewidth]{fe-second.jpg}
+  \captionof{figure}{Stock screen: low-stock list and restock, calls \texttt{GET /ingredients/low-stock} and \texttt{POST /ingredients/\{id\}/restock}.}
   \label{fig:fe-second}
 \end{minipage}
 \end{figure}
 
-Figures~\ref{fig:fe-connect}--\ref{fig:fe-second} illustrate the four wireframe screens of the GUI application. Figure~\ref{fig:fe-connect} shows the connection modal displayed upon startup to capture backend connectivity details. Figure~\ref{fig:fe-main} displays the primary dashboard, presenting available equipment fetched via \texttt{GET /api/v1/equipment}. Figure~\ref{fig:fe-detail} displays the submission dialog for reserving equipment via \texttt{POST /api/v1/loans}. Finally, Figure~\ref{fig:fe-second} depicts the administration panel visualizing equipment loan frequency built using aggregate data.
+Figures~\ref{fig:fe-connect}--\ref{fig:fe-second} show the four screens of
+the prototype. Figure~\ref{fig:fe-connect} shows the connection dialog
+that collects the API URL and X-API-Key at startup; Figure~\ref{fig:fe-main}
+shows the menu screen and the endpoint it reads from; Figure~\ref{fig:fe-detail}
+shows the form used to place an order and the write endpoint it calls; and
+Figure~\ref{fig:fe-second} shows the stock screen, which reads low-stock
+ingredients and lets a shift lead restock them.
 
 % ============================================================
 \section{Operation with Docker Compose}
 % ============================================================
 
-The application infrastructure runs using \texttt{docker-compose.yml} managing two main services:
-\begin{enumerate}
-    \item \texttt{db}: A PostgreSQL container running image \texttt{postgres:16-alpine} with persistent volume mounts.
-    \item \texttt{api}: A Python 3.11 container hosting the FastAPI server via \texttt{uvicorn}.
-\end{enumerate}
-Database credentials, port assignments, and API secret keys are stored in a local \texttt{.env} file (excluded from version control). For production grading on the lecture server, deployment is initiated via \texttt{docker compose up -d --build}.
+Two services run in \texttt{docker-compose.yml}: \texttt{postgres}, the
+database, initialised from a \texttt{.sql} script that creates the six
+tables above and seeds a handful of menu items and ingredients; and
+\texttt{api}, the FastAPI app, which reads its DB connection string and
+the \texttt{X-API-Key} value from a \texttt{.env} file that is not
+committed to the repository. \texttt{docker compose up -d} on the lecture
+server starts both; the frontend is installed separately via
+\texttt{dpkg -i} and points at the server's API URL.
 
 % ============================================================
 \section{Scope, milestones and risks}
 % ============================================================
 
-\textbf{Scope.} 5 relational tables, 4 FastAPI endpoints, 1 \texttt{tkinter} desktop GUI client packaged as a \texttt{.deb} file.
+\textbf{Scope.} Six tables, five API endpoints, four frontend screens.
 
 \textbf{Milestones and schedule.}
 
@@ -158,14 +194,18 @@ Database credentials, port assignments, and API secret keys are stored in a loca
 \toprule
 \textbf{Week} & \textbf{Milestone} & \textbf{Est. hours} \\
 \midrule
-1   & PostgreSQL relational schema setup, DDL scripts, and mock seed data. & 8\,h \\
-2--3 & FastAPI backend implementation with ORM/SQL, joins, aggregation, and authentication. & 12\,h \\
-4--5 & \texttt{tkinter} GUI client development, API interaction, and \texttt{.deb} package assembly. & 10\,h \\
-6   & Automated integration testing, documentation, and video demonstration recording. & 10\,h \\
+1   & Schema + seed data ready & 8 \\
+2--3 & API reading/writing, protected by X-API-Key & 14 \\
+4--5 & Frontend operates all four screens, packaged as .deb & 12 \\
+6   & Tests + documentation + video & 6 \\
 \bottomrule
 \end{tabularx}
 
-\textbf{Risks.} A primary risk is hardware status desynchronization caused by simultaneous loan submissions. This is mitigated at the database layer using explicit transactions with strict isolation levels or check constraints.
+\textbf{Risks.} Two near-simultaneous orders could both read the same
+ingredient's stock as sufficient before either deduction is written,
+over-selling stock that isn't really there -- a check-then-act race
+condition. This is mitigated with a database transaction that locks the
+ingredient row before checking and deducting stock.
 
 % ============================================================
 \section{Acceptance criteria and testing}
@@ -173,22 +213,33 @@ Database credentials, port assignments, and API secret keys are stored in a loca
 
 \textbf{Acceptance criteria.}
 \begin{itemize}[topsep=2pt]
-  \item Attempting to issue a loan for an item marked \texttt{'MAINTENANCE'} is rejected by the API with a \texttt{400 Bad Request}.
-  \item \texttt{GET /api/v1/analytics/usage} correctly calculates aggregated usage counts joining \texttt{equipment} and \texttt{loans}.
-  \item Write requests (\texttt{POST /api/v1/loans}) missing a valid \texttt{X-API-Key} header fail immediately with HTTP \texttt{401 Unauthorized}.
+  \item An order that would drive any required ingredient's stock below
+        zero is rejected (API returns 409).
+  \item \texttt{GET /ingredients/low-stock} returns the correct set of
+        ingredients below their reorder threshold (JOIN + filter).
+  \item \texttt{GET /orders/\{id\}} returns the correct aggregated total
+        (JOIN + aggregation: SUM of subtotals).
+  \item Write endpoints without a valid X-API-Key are refused (401).
 \end{itemize}
 
 \textbf{Test plan.}
 \begin{itemize}[topsep=2pt]
-  \item \textbf{Database:} Verify primary key, foreign key CASCADE integrity, and \texttt{CHECK} constraints using SQL integration scripts.
-  \item \textbf{API:} Automated endpoint test suite built with \texttt{pytest} and FastAPI's \texttt{TestClient} targeting an isolated test database.
-  \item \textbf{Business rule:} Unit tests asserting that double-booking or illegal state transitions trigger transactional rollbacks.
+  \item \textbf{Database:} PK/FK/NOT NULL/CHECK constraints, including
+        that stock\_quantity can never go negative.
+  \item \textbf{API:} endpoint tests, happy path + error cases, with
+        \texttt{pytest} and FastAPI's \texttt{TestClient} against a test
+        database (L~08).
+  \item \textbf{Business rule:} a dedicated test firing two overlapping
+        orders against an ingredient with only enough stock for one,
+        verifying the second is rejected and stock never goes negative --
+        the test for the race-condition risk named above.
 \end{itemize}
 
 \vspace{1em}
 \begin{infobox}
 \textbf{Effort budget:} the whole term project (system, documentation and video)
 should fit into roughly \textbf{40\,h of work} over at most \textbf{2 months}.
+Keep your scope within that budget.
 \end{infobox}
 
 \end{document}
