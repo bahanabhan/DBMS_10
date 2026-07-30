@@ -6,6 +6,7 @@
 
 \usepackage{thga-db}
 \usepackage{caption}   % enables \captionof inside minipages
+\usepackage{float}
 
 % ----- Metadata ---------------------------------------------
 \renewcommand{\thgaKurs}{Databases}
@@ -61,7 +62,7 @@ next shift starts with accurate numbers.
 \section{Data model -- ER sketch}
 % ============================================================
 
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
   % Swap example-figure.jpg for your own file once you've drawn it.
   \includegraphics[width=0.85\linewidth]{er_sketch.jpg}
@@ -133,7 +134,7 @@ packaged as a \texttt{.deb} installer. It asks for the API URL and the
 \texttt{X-API-Key} in a connection dialog at startup, then offers three
 further screens: a menu view, an order form, and a stock view.
 
-\begin{figure}[ht]
+\begin{figure}[H]
 \centering
 \begin{minipage}[t]{0.47\linewidth}\centering
   \includegraphics[width=\linewidth]{fe-connect.jpg}
